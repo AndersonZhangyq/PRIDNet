@@ -218,9 +218,12 @@ if __name__ == '__main__':
     data_url = args.data_url
     train_url = args.train_url
     result_dir = args.result_dir
-
+    print(data_url + '/*/*NOISY_RAW_010*')
     file_list = glob.glob(data_url + '/*/*NOISY_RAW_010*')
+    print(list(file_list))
+    print(data_url + '/*/*GT_RAW_010*')
     gt_list = glob.glob(data_url + '/*/*GT_RAW_010*')
+    print(list(gt_list))
 
     # train_ids = [os.path.dirname(train_fn).split(os.path.sep)[-1][:4] for train_fn in file_list]
 
