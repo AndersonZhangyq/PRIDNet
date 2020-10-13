@@ -4,6 +4,7 @@ import h5py
 
 try:
     import moxing as mox
+    import npu_bridge
     mox.file.shift('os', 'mox')
     h5py_File_class = h5py.File
 
@@ -36,7 +37,6 @@ import time
 import numpy as np
 import scipy.io
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
 from PIL import Image
 from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
 
