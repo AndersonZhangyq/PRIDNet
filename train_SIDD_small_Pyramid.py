@@ -4,6 +4,7 @@ import h5py
 
 try:
     import moxing as mox
+    import npu_bridge
     mox.file.shift('os', 'mox')
     h5py_File_class = h5py.File
 
@@ -17,7 +18,6 @@ try:
                 if mox.file.exists(name):
                     mox.file.copy(name, self._tmp_name)
                 name = self._tmp_name
-            print(name)
             super(OBSFile, self).__init__(name, *args, **kwargs)
 
         def close(self):
@@ -36,7 +36,6 @@ import time
 import numpy as np
 import scipy.io
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
 from PIL import Image
 from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
 
@@ -266,7 +265,6 @@ if __name__ == '__main__':
         index = index + 1
         print(index, 'loading file: ', key)
         m = h5py.File(file)
-        print("m.keys()", list(m.keys()))
         m = m['x']
         m = np.expand_dims(np.expand_dims(m, 0), 3)
         mat_img[key] = np.concatenate([m, m], 0)

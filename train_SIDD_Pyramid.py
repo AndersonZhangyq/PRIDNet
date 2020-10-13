@@ -4,6 +4,7 @@ import h5py
 
 try:
     import moxing as mox
+    import npu_bridge
     mox.file.shift('os', 'mox')
     h5py_File_class = h5py.File
 
@@ -277,8 +278,8 @@ if __name__ == '__main__':
         m_gt_1 = np.expand_dims(np.expand_dims(m_gt_1, 0), 3)
         gt_img[key] = np.concatenate([m_gt, m_gt_1], 0)
         train_ids.append(key)
-        # if (len(train_ids) > 20):
-        #     break
+        if (len(train_ids) >= 20):
+            break
     ps = 256  # patch size for training
     save_freq = 500
 
