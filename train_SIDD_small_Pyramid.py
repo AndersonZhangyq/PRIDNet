@@ -13,19 +13,18 @@ try:
             self._tmp_name = None
             self._target_name = name
             if name.startswith('obs://') or name.startswith('s3://'):
-                self._tmp_name = name.replace('/', '_')
+                self._tmp_name = os.path.join('cache', 'h5py_tmp', name.replace('/', '_'))
                 if mox.file.exists(name):
-                    mox.file.copy(
-                        name, os.path.join('cache', 'h5py_tmp', self._tmp_name))
+                    mox.file.copy(name, self._tmp_name)
                 name = self._tmp_name
-
+            print(name)
             super(OBSFile, self).__init__(name, *args, **kwargs)
 
         def close(self):
             if self._tmp_name:
                 mox.file.copy(self._tmp_name, self._target_name)
-
             super(OBSFile, self).close()
+
 
     setattr(h5py, 'File', OBSFile)
 except:
@@ -250,12 +249,8 @@ if __name__ == '__main__':
     data_url = args.data_url
     train_url = args.train_url
     result_dir = args.result_dir
-    print(data_url + '/*/*NOISY_RAW_010*')
     file_list = glob.glob(data_url + '/*/*NOISY_RAW_010*')
-    print(list(file_list))
-    print(data_url + '/*/*GT_RAW_010*')
     gt_list = glob.glob(data_url + '/*/*GT_RAW_010*')
-    print(list(gt_list))
 
     # train_ids = [os.path.dirname(train_fn).split(os.path.sep)[-1][:4] for train_fn in file_list]
 
@@ -271,7 +266,9 @@ if __name__ == '__main__':
 
         index = index + 1
         print(index, 'loading file: ', key)
-        m = h5py.File(file)['x']
+        m = h5py.File(file)
+        print("m.keys()", list(m.keys()))
+        m = m['x']
         m = np.expand_dims(np.expand_dims(m, 0), 3)
         mat_img[key] = np.concatenate([m, m], 0)
 
