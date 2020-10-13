@@ -18,7 +18,6 @@ try:
                 if mox.file.exists(name):
                     mox.file.copy(name, self._tmp_name)
                 name = self._tmp_name
-            print(name)
             super(OBSFile, self).__init__(name, *args, **kwargs)
 
         def close(self):
@@ -266,7 +265,6 @@ if __name__ == '__main__':
         index = index + 1
         print(index, 'loading file: ', key)
         m = h5py.File(file)
-        print("m.keys()", list(m.keys()))
         m = m['x']
         m = np.expand_dims(np.expand_dims(m, 0), 3)
         mat_img[key] = np.concatenate([m, m], 0)
