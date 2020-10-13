@@ -6,7 +6,6 @@ import os, time, scipy.io
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import numpy as np
-from tflearn.layers.conv import global_avg_pool
 from network import network
 
 
@@ -47,13 +46,13 @@ for i in range(len(val_img)):
 
     each_block = val_img[i] #(256, 256)
     each_block = np.expand_dims(np.expand_dims(each_block, axis=0), axis=3)
-    
+
 
     st = time.time()
     output = sess.run(out_image, feed_dict={in_image: each_block})
     output = np.minimum(np.maximum(output, 0), 1)
 
-    
+
     t_cost = time.time() - st
     ouput_blocks[i] = output
     print(ouput_blocks[i].shape)

@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import h5py
 
-
 try:
     import moxing as mox
     mox.file.shift('os', 'mox')
@@ -13,7 +12,8 @@ try:
             self._tmp_name = None
             self._target_name = name
             if name.startswith('obs://') or name.startswith('s3://'):
-                self._tmp_name = os.path.join('cache', 'h5py_tmp', name.replace('/', '_'))
+                self._tmp_name = os.path.join('cache', 'h5py_tmp',
+                                              name.replace('/', '_'))
                 if mox.file.exists(name):
                     mox.file.copy(name, self._tmp_name)
                 name = self._tmp_name
@@ -24,7 +24,6 @@ try:
             if self._tmp_name:
                 mox.file.copy(self._tmp_name, self._target_name)
             super(OBSFile, self).close()
-
 
     setattr(h5py, 'File', OBSFile)
 except:
