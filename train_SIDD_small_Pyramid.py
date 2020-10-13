@@ -1,4 +1,9 @@
 from __future__ import print_function
+try:
+    import moxing as mox
+    mox.file.shift('os', 'mox')
+except:
+    pass
 import h5py
 import glob
 import os, time, scipy.io
