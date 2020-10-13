@@ -6,8 +6,9 @@ import tensorflow.contrib.slim as slim
 import numpy as np
 from tflearn.layers.conv import global_avg_pool
 from network import network
+import pickle
 
-dir_name = './SIDD_Medium_Raw/Data/'
+dir_name = '/mnt/ramdisk/SIDD_Medium_Raw/Data/'
 checkpoint_dir = './checkpoint/SIDD_Pyramid/'
 result_dir = './result/SIDD_Pyramid/'
 
@@ -20,6 +21,34 @@ mat_img = {}
 gt_img = {}
 start = time.time()
 index = 0
+# if os.path.exists("gt_img.pkl") and os.path.exists("mat_img.pkl"):
+#     with open("gt_img.pkl", 'rb') as f:
+#         gt_img = pickle.load(f)
+#     with open("mat_img.pkl", 'rb') as f:
+#         mat_img = pickle.load(f)
+# else:
+#     for file, gt_file in zip(file_list, gt_list):
+#         key = os.path.basename(file)[0:4]
+#         file_1 = file[:-5]+'1.MAT'
+#         gt_file_1 = gt_file[:-5]+'1.MAT'
+
+#         index = index + 1
+#         print(index, 'loading file: ', key)
+#         m = h5py.File(file)['x']
+#         m = np.expand_dims(np.expand_dims(m, 0), 3)
+#         m_1 = h5py.File(file_1)['x']
+#         m_1 = np.expand_dims(np.expand_dims(m_1, 0), 3)
+#         mat_img[key] = np.concatenate([m, m_1], 0)
+
+#         m_gt = h5py.File(gt_file)['x']
+#         m_gt = np.expand_dims(np.expand_dims(m_gt, 0), 3)
+#         m_gt_1 = h5py.File(gt_file_1)['x']
+#         m_gt_1 = np.expand_dims(np.expand_dims(m_gt_1, 0), 3)
+#         gt_img[key] = np.concatenate([m_gt, m_gt_1], 0)
+#     with open("gt_img.pkl", 'wb+') as f:
+#         pickle.dump(gt_img, f)
+#     with open("mat_img.pkl", 'wb+') as f:
+#         pickle.dump(mat_img, f)
 for file, gt_file in zip(file_list, gt_list):
     key = os.path.basename(file)[0:4]
     file_1 = file[:-5]+'1.MAT'
@@ -38,8 +67,6 @@ for file, gt_file in zip(file_list, gt_list):
     m_gt_1 = h5py.File(gt_file_1)['x']
     m_gt_1 = np.expand_dims(np.expand_dims(m_gt_1, 0), 3)
     gt_img[key] = np.concatenate([m_gt, m_gt_1], 0)
-
-
 ps = 256  # patch size for training
 save_freq = 500
 
