@@ -6,7 +6,6 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
 import numpy as np
-from tflearn.layers.conv import global_avg_pool
 from network import network
 import argparse
 
