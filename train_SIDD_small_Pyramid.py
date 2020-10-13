@@ -1,21 +1,48 @@
 from __future__ import print_function
+
+import h5py
+
+
 try:
     import moxing as mox
     mox.file.shift('os', 'mox')
+    h5py_File_class = h5py.File
+
+    class OBSFile(h5py_File_class):
+        def __init__(self, name, *args, **kwargs):
+            self._tmp_name = None
+            self._target_name = name
+            if name.startswith('obs://') or name.startswith('s3://'):
+                self._tmp_name = name.replace('/', '_')
+                if mox.file.exists(name):
+                    mox.file.copy(
+                        name, os.path.join('cache', 'h5py_tmp', self._tmp_name))
+                name = self._tmp_name
+
+            super(OBSFile, self).__init__(name, *args, **kwargs)
+
+        def close(self):
+            if self._tmp_name:
+                mox.file.copy(self._tmp_name, self._target_name)
+
+            super(OBSFile, self).close()
+
+    setattr(h5py, 'File', OBSFile)
 except:
     pass
-import h5py
-import glob
-import os, time, scipy.io
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
-from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
-import numpy as np
-from network import network
 import argparse
+import glob
+import os
+import time
 
 import numpy as np
+import scipy.io
+import tensorflow as tf
+import tensorflow.contrib.slim as slim
 from PIL import Image
+from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
+
+from network import network
 
 _errstr = "Mode is unknown or incompatible with input array shape."
 
@@ -239,8 +266,8 @@ if __name__ == '__main__':
     train_ids = []
     for file, gt_file in zip(file_list, gt_list):
         key = os.path.dirname(file).split(os.path.sep)[-1][:4]
-        file_1 = file[:-5]+'1.MAT'
-        gt_file_1 = gt_file[:-5]+'1.MAT'
+        file_1 = file[:-5] + '1.MAT'
+        gt_file_1 = gt_file[:-5] + '1.MAT'
 
         index = index + 1
         print(index, 'loading file: ', key)
@@ -254,7 +281,6 @@ if __name__ == '__main__':
         train_ids.append(key)
         if index >= 20:
             break
-
 
     ps = 256  # patch size for training
     save_freq = 500
@@ -277,7 +303,6 @@ if __name__ == '__main__':
     # tv_loss = (h_tv + w_tv) / (255 * 256)
     G_loss = tf.reduce_mean(tf.abs(out_image - gt_image))
     # G_loss = G_loss_2 + 0.1 * tv_loss
-
 
     tf.summary.scalar('G_loss', G_loss)
     merged = tf.summary.merge_all()
@@ -324,16 +349,14 @@ if __name__ == '__main__':
         cnt = 0
         epoch_loss = 0
 
-
         for ind in np.random.permutation(len(train_ids)):
 
             st = time.time()
             cnt += 1
 
-            train_id = train_ids[ind]   #string
+            train_id = train_ids[ind]  #string
             train_batch = mat_img[train_id]
             gt_batch = gt_img[train_id]
-
 
             # crop
             H = train_batch.shape[1]
@@ -343,7 +366,6 @@ if __name__ == '__main__':
             yy = np.random.randint(0, H - ps)
             input_patch = train_batch[:, yy:yy + ps, xx:xx + ps, :]
             gt_patch = gt_batch[:, yy:yy + ps, xx:xx + ps, :]
-
 
             if np.random.randint(2, size=1)[0] == 1:  # random flip
                 input_patch = np.flip(input_patch, axis=1)
@@ -355,43 +377,51 @@ if __name__ == '__main__':
                 input_patch = np.transpose(input_patch, (0, 2, 1, 3))
                 gt_patch = np.transpose(gt_patch, (0, 2, 1, 3))
 
-
-            _, G_current, output, summary = sess.run([G_opt, G_loss, out_image, merged],
-                                                    feed_dict={in_image: input_patch, gt_image: gt_patch,
-                                                                lr: learning_rate})
-
-
+            _, G_current, output, summary = sess.run(
+                [G_opt, G_loss, out_image, merged],
+                feed_dict={
+                    in_image: input_patch,
+                    gt_image: gt_patch,
+                    lr: learning_rate
+                })
 
             output = np.minimum(np.maximum(output, 0), 1)
             g_loss[ind] = G_current
             epoch_loss += G_current
             summary_writer.add_summary(summary, cnt + epoch * len(train_ids))
 
-            print("%d %d Loss=%.4f Time=%.3f" % (epoch, cnt, np.mean(g_loss[np.where(g_loss)]), time.time() - st))
+            print("%d %d Loss=%.4f Time=%.3f" %
+                  (epoch, cnt, np.mean(
+                      g_loss[np.where(g_loss)]), time.time() - st))
 
             if epoch % save_freq == 0:
                 if not os.path.isdir(result_dir + '%04d' % epoch):
                     os.makedirs(result_dir + '%04d' % epoch)
 
-                temp = np.concatenate((gt_patch[0, :, :, 0], output[0, :, :, 0]), axis=1)
+                temp = np.concatenate(
+                    (gt_patch[0, :, :, 0], output[0, :, :, 0]), axis=1)
                 toimage(temp * 255, high=255, low=0, cmin=0,
                         cmax=255).save(result_dir + '%04d/%04d_00_train.jpg' %
                                        (epoch, int(train_id)))
 
         epoch_loss /= len(train_ids)
         epoch_loss_list.append(epoch_loss)
-        epoch_summary = tf.Summary(value=[tf.Summary.Value(tag='epoch_loss', simple_value=epoch_loss)])
+        epoch_summary = tf.Summary(value=[
+            tf.Summary.Value(tag='epoch_loss', simple_value=epoch_loss)
+        ])
         summary_writer.add_summary(summary=epoch_summary, global_step=epoch)
         summary_writer.flush()
 
         if epoch_loss_list[epoch] < min_epoch_loss:
             saver.save(sess, train_url + 'model.ckpt')
             with open(train_url + '/log.txt', 'a+') as log:
-                log.write('saved epoch: %04d, epoch loss = ' % epoch + str(epoch_loss) + '\n')
+                log.write('saved epoch: %04d, epoch loss = ' % epoch +
+                          str(epoch_loss) + '\n')
             print('saved epoch: %04d' % epoch)
             print(epoch_loss)
             min_epoch_loss = epoch_loss_list[epoch]
         if epoch >= 3990:
             saver.save(sess, train_url + 'model-%04d.ckpt' % epoch)
             with open(train_url + '/log.txt', 'a+') as log:
-                log.write('final saved epoch: %04d, epoch loss = ' % epoch + str(epoch_loss) + '\n')
+                log.write('final saved epoch: %04d, epoch loss = ' % epoch +
+                          str(epoch_loss) + '\n')
