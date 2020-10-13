@@ -3,6 +3,8 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import numpy as np
 
+tf.GraphKeys.LAYER_TENSOR = 'layer_tensor'
+
 
 def global_avg_pool(incoming, name="GlobalAvgPool"):
     """ Global Average Pooling.
