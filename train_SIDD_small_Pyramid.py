@@ -4,6 +4,7 @@ import glob
 import os, time, scipy.io
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
+from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
 import numpy as np
 from tflearn.layers.conv import global_avg_pool
 from network import network
@@ -43,8 +44,13 @@ for file, gt_file in zip(file_list, gt_list):
 ps = 256  # patch size for training
 save_freq = 500
 
+config = tf.ConfigProto()
+custom_op = config.graph_options.rewrite_options.custom_optimizers.add()
+custom_op.name = "NpuOptimizer"
+custom_op.parameter_map["use_off_line"].b = True  #在昇腾AI处理器执行训练
+config.graph_options.rewrite_options.remapping = RewriterConfig.OFF  #关闭remap开关
 
-sess = tf.Session()
+sess = tf.Session(config=config)
 in_image = tf.placeholder(tf.float32, [None, None, None, 1])
 gt_image = tf.placeholder(tf.float32, [None, None, None, 1])
 
