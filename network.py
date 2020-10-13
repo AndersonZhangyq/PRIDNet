@@ -1,7 +1,40 @@
 from __future__ import print_function
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-from tflearn.layers.conv import global_avg_pool
+import numpy as np
+
+
+def global_avg_pool(incoming, name="GlobalAvgPool"):
+    """ Global Average Pooling.
+    Input:
+        4-D Tensor [batch, height, width, in_channels].
+    Output:
+        2-D Tensor [batch, pooled dim]
+    Arguments:
+        incoming: `Tensor`. Incoming 4-D Tensor.
+        name: A name for this layer (optional). Default: 'GlobalAvgPool'.
+    """
+    def get_incoming_shape(incoming):
+        """ Returns the incoming data shape """
+        if isinstance(incoming, tf.Tensor):
+            return incoming.get_shape().as_list()
+        elif type(incoming) in [np.array, np.ndarray, list, tuple]:
+            return np.shape(incoming)
+        else:
+            raise Exception("Invalid incoming layer.")
+
+    input_shape = get_incoming_shape(incoming)
+    assert len(
+        input_shape
+    ) == 4, "Incoming Tensor shape must be 4-D, not %d-D" % len(input_shape)
+
+    with tf.name_scope(name):
+        inference = tf.reduce_mean(incoming, [1, 2])
+
+    # Track output tensor.
+    tf.add_to_collection(tf.GraphKeys.LAYER_TENSOR + '/' + name, inference)
+
+    return inference
 
 
 def lrelu(x):
