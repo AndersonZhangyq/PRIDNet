@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 import h5py
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 try:
     import moxing as mox
@@ -30,7 +32,6 @@ except:
     pass
 import argparse
 import glob
-import os
 import time
 
 import numpy as np

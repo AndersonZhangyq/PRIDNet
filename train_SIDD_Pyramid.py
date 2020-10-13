@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 import h5py
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 try:
     import moxing as mox
@@ -18,7 +20,6 @@ try:
                 if mox.file.exists(name):
                     mox.file.copy(name, self._tmp_name)
                 name = self._tmp_name
-            print(name)
             super(OBSFile, self).__init__(name, *args, **kwargs)
 
         def close(self):
@@ -31,13 +32,11 @@ except:
     pass
 import argparse
 import glob
-import os
 import time
 
 import numpy as np
 import scipy.io
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
 from PIL import Image
 from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
 
@@ -278,8 +277,8 @@ if __name__ == '__main__':
         m_gt_1 = np.expand_dims(np.expand_dims(m_gt_1, 0), 3)
         gt_img[key] = np.concatenate([m_gt, m_gt_1], 0)
         train_ids.append(key)
-        if (len(train_ids) >= 20):
-            break
+        # if (len(train_ids) >= 20):
+        #     break
     ps = 256  # patch size for training
     save_freq = 500
 
