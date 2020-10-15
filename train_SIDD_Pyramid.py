@@ -3,11 +3,24 @@ from __future__ import print_function
 import h5py
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import argparse
+import glob
+import time
 
+import numpy as np
+import scipy.io
+import tensorflow as tf
+from PIL import Image
+from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
 try:
     import moxing as mox
     import npu_bridge
     mox.file.shift('os', 'mox')
+    import moxing.tensorflow as mox_tf
+    mox_tf.cache()
     h5py_File_class = h5py.File
 
     class OBSFile(h5py_File_class):
@@ -28,17 +41,14 @@ try:
             super(OBSFile, self).close()
 
     setattr(h5py, 'File', OBSFile)
+
+    config = tf.ConfigProto()
+    custom_op = config.graph_options.rewrite_options.custom_optimizers.add()
+    custom_op.name = "NpuOptimizer"
+    custom_op.parameter_map["use_off_line"].b = True
+    config.graph_options.rewrite_options.remapping = RewriterConfig.OFF
 except:
     pass
-import argparse
-import glob
-import time
-
-import numpy as np
-import scipy.io
-import tensorflow as tf
-from PIL import Image
-from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
 
 from network import network
 
@@ -282,12 +292,6 @@ if __name__ == '__main__':
     ps = 256  # patch size for training
     save_freq = 500
 
-    config = tf.ConfigProto()
-    custom_op = config.graph_options.rewrite_options.custom_optimizers.add()
-    custom_op.name = "NpuOptimizer"
-    custom_op.parameter_map["use_off_line"].b = True
-    config.graph_options.rewrite_options.remapping = RewriterConfig.OFF
-
     sess = tf.Session(config=config)
     # sess = tf.Session()
     in_image = tf.placeholder(tf.float32, [None, None, None, 1])
@@ -330,7 +334,7 @@ if __name__ == '__main__':
     epoch_loss_list = []
     min_epoch_loss = 50
     for epoch in range(lastepoch, 4001):
-        if os.path.isdir("result/%04d" % epoch):
+        if os.path.isdir(f"{result_dir}/{epoch:04}"):
             continue
         if epoch > 1500:
             learning_rate = 5e-5
