@@ -3,6 +3,7 @@ from __future__ import print_function
 import h5py
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
 import argparse
 import glob
 import time
@@ -10,6 +11,11 @@ import time
 import numpy as np
 import scipy.io
 import tensorflow as tf
+import random
+SEED = 123
+random.seed(SEED)
+np.random.seed(SEED)
+tf.random.set_random_seed(SEED)
 from PIL import Image
 from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
 
@@ -47,6 +53,14 @@ try:
     custom_op.name = "NpuOptimizer"
     custom_op.parameter_map["use_off_line"].b = True
     config.graph_options.rewrite_options.remapping = RewriterConfig.OFF
+    # 是否开启dump功能
+    custom_op.parameter_map["enable_dump"].b = True
+    # dump数据存放路径
+    custom_op.parameter_map["dump_path"].s = tf.compat.as_bytes("/tmp") 
+    # dump哪些迭代的数据，默认dump所有迭代的数据，多个迭代用“|”分割，例如：0|5|10；也可以用"-"指定迭代范围，例如：0|3-5|10
+    custom_op.parameter_map["dump_step"].s = tf.compat.as_bytes("0|5|10")
+    # dump模式，默认仅dump算子输出数据，还可以dump算子输入数据，取值：input/output/all
+    custom_op.parameter_map["dump_mode"].s = tf.compat.as_bytes("all") 
 except:
     pass
 
